@@ -2,112 +2,207 @@ import streamlit as st
 import re
 from datetime import datetime
 
-# Page Configuration
-st.set_page_config(page_title="AI Cyber Threat & Phishing Analyzer", page_icon="🛡️", layout="wide")
+# Page Setup
+st.set_page_config(
+    page_title="CyberGuard AI | Tajinder Kumar",
+    page_icon="⚡",
+    layout="centered"
+)
 
-st.title("🛡️ AI-Powered Email & Log Threat Analyzer")
-st.write("**Project Domain:** Python | Cloud Computing | Cyber Security | AI")
-st.markdown("---")
+# Custom Dark Cyber Theme CSS
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0b0f19;
+        color: #e2e8f0;
+    }
+    .header-box {
+        background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+        border-left: 5px solid #00f2fe;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.15);
+    }
+    .student-badge {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        padding: 12px 18px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #00f2fe !important;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# AI / Heuristic Threat Keywords Database
-URGENCY_KEYWORDS = [
-    "urgent", "immediately", "suspended", "verify your account", "blocked",
-    "unauthorized", "click below", "update payment", "24 hours", "security alert",
-    "expire", "password reset", "bank account", "kyc", "lottery", "winner"
+# Top Title Banner
+st.markdown("""
+    <div class="header-box">
+        <h2 style="margin:0; color:#00f2fe;">⚡ CYBERGUARD AI : CLOUD THREAT ENGINE</h2>
+        <p style="margin:5px 0 0 0; color:#94a3b8;">Intelligent Phishing, Malicious URL & Social Engineering Detection System</p>
+    </div>
+""", unsafe_allow_html=True)
+
+# Student & University Details Banner
+st.markdown("""
+    <div class="student-badge">
+        <div><b>👨‍💻 Developed By:</b> Tajinder Kumar (Roll No: 25801100)</div>
+        <div><b>🎓 Submitted To:</b> Dr. Jagdeep Kaur (HOD)</div>
+        <div><b>🏛️ University:</b> Sant Baba Bhag Singh University — B.Tech CSE (AI/ML)</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Threat Databases
+URGENCY_WORDS = [
+    "urgent", "immediately", "suspended", "verify", "blocked", "unauthorized",
+    "click below", "update payment", "24 hours", "security alert", "expire",
+    "password reset", "bank", "kyc", "lottery", "winner", "free", "prize"
 ]
+RISKY_TLDS = [".xyz", ".top", ".club", ".info", ".tk", ".ml", ".ga", ".cf", ".pw"]
 
-SUSPICIOUS_TLDS = [".xyz", ".top", ".club", ".info", ".tk", ".ml", ".ga", ".cf", ".pw"]
+def scan_payload(sender, subject, content):
+    ai_score = 0
+    url_score = 0
+    sender_score = 0
+    alerts = []
 
-def analyze_content(sender, subject, body):
-    score = 0
-    findings = []
-    
-    combined_text = f"{subject} {body}".lower()
-    
-    # 1. AI Keyword & NLP Intent Analysis
-    matched_keywords = [word for word in URGENCY_KEYWORDS if word in combined_text]
-    if matched_keywords:
-        score += len(matched_keywords) * 15
-        findings.append(f"⚠️ **AI Intent Analysis:** Detected {len(matched_keywords)} social engineering/urgency trigger(s): `{', '.join(matched_keywords)}`")
-    
-    # 2. Cyber Security URL Extraction & Inspection
-    urls = re.findall(r'(https?://[^\s]+)', body)
-    if urls:
-        findings.append(f"🔗 **Extracted Links ({len(urls)}):** " + ", ".join(urls))
-        for url in urls:
-            if "http://" in url:
-                score += 20
-                findings.append(f"❌ **Unencrypted Link:** `{url}` uses insecure HTTP instead of HTTPS.")
-            if any(url.lower().endswith(tld) or f"{tld}/" in url.lower() for tld in SUSPICIOUS_TLDS):
-                score += 25
-                findings.append(f"🚨 **High-Risk Domain Extension:** `{url}` uses a TLD commonly associated with phishing.")
-            if re.search(r'https?://\d+\.\d+\.\d+\.\d+', url):
-                score += 30
-                findings.append(f"🚨 **IP-Based URL Detected:** `{url}` hides the domain name using a raw IP address.")
+    full_text = f"{subject} {content}".lower()
 
-    # 3. Sender Email Spoofing Check
+    # 1. AI NLP Trigger Check
+    found_words = [w for w in URGENCY_WORDS if w in full_text]
+    if found_words:
+        ai_score = min(len(found_words) * 15, 45)
+        alerts.append(("AI NLP Engine", f"Detected high-pressure manipulation keywords: {', '.join(found_words)}"))
+
+    # 2. Cyber URL Check
+    links = re.findall(r'(https?://[^\s]+)', content)
+    if links:
+        for link in links:
+            if "http://" in link:
+                url_score += 20
+                alerts.append(("SSL/TLS Check", f"Unencrypted HTTP protocol found in link: {link}"))
+            if any(link.lower().endswith(t) or f"{t}/" in link.lower() for t in RISKY_TLDS):
+                url_score += 25
+                alerts.append(("Domain Threat Check", f"High-risk top-level domain detected: {link}"))
+            if re.search(r'https?://\d+\.\d+\.\d+\.\d+', link):
+                url_score += 30
+                alerts.append(("IP Obfuscation Check", f"Raw IP address used instead of domain name: {link}"))
+    url_score = min(url_score, 40)
+
+    # 3. Sender Authentication Check
     if sender:
         if "@" not in sender:
-            score += 20
-            findings.append("❌ **Invalid Sender Address:** Missing '@' symbol.")
+            sender_score = 15
+            alerts.append(("Header Check", "Malformed sender email address (missing '@' symbol)."))
         else:
-            domain = sender.split("@")[-1].lower()
-            if any(char.isdigit() for char in domain.split(".")[0]):
-                score += 15
-                findings.append(f"⚠️ **Suspicious Sender Domain:** `{domain}` contains numbers often used in lookalike/spoofed domains.")
+            domain_part = sender.split("@")[-1].lower()
+            if any(c.isdigit() for c in domain_part.split(".")[0]):
+                sender_score = 15
+                alerts.append(("Spoofing Check", f"Sender domain '{domain_part}' contains suspicious numeric patterns."))
 
-    # Cap score at 100
-    score = min(score, 100)
-    return score, findings
+    total_risk = min(ai_score + url_score + sender_score, 100)
+    return total_risk, ai_score, url_score, sender_score, len(links), alerts
 
-# Sidebar Details for Teacher/Viva
-with st.sidebar:
-    st.header("📋 Project Information")
-    st.write("**Course:** B.Tech CSE (AI/ML)")
-    st.write("**Tech Stack:** Python, Regex, NLP Heuristics, Streamlit Cloud")
-    st.markdown("---")
-    st.subheader("How It Works")
-    st.write("1. **Input:** Paste suspicious email details or server message logs.")
-    st.write("2. **AI Engine:** Scans text for social engineering and urgency patterns.")
-    st.write("3. **Cyber Check:** Inspects embedded URLs, protocols, and sender domains.")
-    st.write("4. **Cloud Output:** Generates a real-time threat score and security report.")
+# Navigation Tabs (New Structure)
+tab1, tab2, tab3 = st.tabs(["🚀 Threat Scanner", "📊 Detailed AI Breakdown", "🎓 Project Profile"])
 
-# Main Input Form
-col1, col2 = st.columns([1.2, 1])
-
-with col1:
-    st.subheader("📩 Enter Email / Message Details")
-    sender_input = st.text_input("Sender Email Address", placeholder="e.g., support@secure-login123.xyz")
-    subject_input = st.text_input("Email Subject", placeholder="e.g., URGENT: Your account will be suspended in 24 hours")
-    body_input = st.text_area("Message Body / Log Content", height=180, placeholder="Paste the email text or log here... Example: Dear user, unauthorized login detected. Click below to verify your account immediately: http://192.168.1.55/login")
+with tab1:
+    st.markdown("#### 🔍 Input Email or Log Payload for Cloud Inspection")
     
-    analyze_btn = st.button("🔍 Run AI Security Scan", use_container_width=True)
+    # Quick Demo Selector for Viva
+    sample_mode = st.selectbox(
+        "⚡ Quick Load Test Sample (Helpful for Viva Demo):",
+        ["-- Type Custom Input --", "🚨 Sample 1: Bank KYC Phishing Attack", "✅ Sample 2: Safe Official University Email"]
+    )
 
-with col2:
-    st.subheader("📊 Threat Assessment Report")
-    if analyze_btn:
-        if not subject_input and not body_input:
-            st.warning("Please enter a subject or message body to analyze.")
-        else:
-            risk_score, report_items = analyze_content(sender_input, subject_input, body_input)
-            
-            st.metric(label="Calculated Threat Risk Score", value=f"{risk_score} / 100")
-            st.progress(risk_score / 100)
-            
-            if risk_score >= 60:
-                st.error("🚨 **STATUS: HIGH-RISK PHISHING DETECTED** — Do not click any links or reply.")
-            elif risk_score >= 25:
-                st.warning("⚠️ **STATUS: SUSPICIOUS CONTENT** — Proceed with caution and verify the sender manually.")
-            else:
-                st.success("✅ **STATUS: SAFE / LOW RISK** — No obvious phishing indicators found.")
-            
-            st.markdown("**Detailed Security Findings:**")
-            if report_items:
-                for item in report_items:
-                    st.write(item)
-            else:
-                st.write("✔️ Clean text, encrypted links, and standard sender format.")
-            
-            st.caption(f"Scan completed on Cloud Server at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    if sample_mode == "🚨 Sample 1: Bank KYC Phishing Attack":
+        default_sender = "alert@sbi-kyc-update99.xyz"
+        default_subject = "URGENT: Your bank account is suspended! Verify immediately"
+        default_body = "Dear user, unauthorized login attempt detected. Click below within 24 hours to update KYC or your account will remain blocked: http://192.168.10.45/login"
+    elif sample_mode == "✅ Sample 2: Safe Official University Email":
+        default_sender = "hod.cse@sbbsuniversity.ac.in"
+        default_subject = "Industrial Training Viva Schedule for B.Tech CSE"
+        default_body = "Dear students, please bring your hardcopy training report and laptop for the project presentation tomorrow at 10:00 AM. Visit https://www.sbbsuniversity.ac.in for guidelines."
     else:
-        st.info("Fill in the details on the left and click **Run AI Security Scan** to generate the report.")
+        default_sender = ""
+        default_subject = ""
+        default_body = ""
+
+    sender_in = st.text_input("📧 Sender Email Address", value=default_sender, placeholder="e.g., service@paytm-verify12.xyz")
+    subject_in = st.text_input("📝 Subject Line", value=default_subject, placeholder="e.g., Urgent Security Alert")
+    body_in = st.text_area("📄 Email Content / Server Log", value=default_body, height=130, placeholder="Paste full message or log payload here...")
+
+    run_scan = st.button("⚡ EXECUTE AI CLOUD SCAN", use_container_width=True, type="primary")
+
+    if run_scan:
+        if not subject_in and not body_in:
+            st.warning("⚠️ Please enter text or select a test sample above to run the scan.")
+        else:
+            total, ai_s, url_s, send_s, link_count, findings = scan_payload(sender_in, subject_in, body_in)
+
+            st.markdown("---")
+            st.markdown("#### 📈 Real-Time Cloud Telemetry")
+
+            # 4-Card Horizontal Metric Structure
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Overall Threat", f"{total}%")
+            m2.metric("AI NLP Risk", f"{ai_s}/45")
+            m3.metric("URL Risk", f"{url_s}/40")
+            m4.metric("Links Found", f"{link_count}")
+
+            st.progress(total / 100)
+
+            if total >= 60:
+                st.error("🚨 **CRITICAL THREAT DETECTED (HIGH-RISK PHISHING)** — Quarantine message immediately.")
+            elif total >= 25:
+                st.warning("⚠️ **MODERATE RISK (SUSPICIOUS)** — Verify sender identity before interacting.")
+            else:
+                st.success("✅ **CLEAN PAYLOAD (SAFE)** — No malicious indicators or phishing triggers detected.")
+
+            st.markdown("##### 🔎 Security Engine Logs:")
+            if findings:
+                for module, msg in findings:
+                    st.markdown(f"- **[{module}]** {msg}")
+            else:
+                st.markdown("- **[All Modules]** Passed security verification checks.")
+
+            st.caption(f"Cloud Scan ID: CG-{datetime.now().strftime('%H%M%S')} | Executed by Tajinder Kumar (25801100)")
+
+with tab2:
+    st.subheader("🧠 How the 4 Training Domains Work Together")
+    st.info("This architecture combines Python, Cloud Computing, Cyber Security, and AI into a unified pipeline.")
+    st.markdown("""
+    1. **Python Core:** Handles regular expression (`re`) parsing, string tokenization, and UI rendering.
+    2. **Artificial Intelligence (NLP Heuristics):** Evaluates psychological urgency, fear-inducing keywords, and social engineering intent.
+    3. **Cyber Security Module:** Inspects URLs for missing SSL (`http://`), raw IP obfuscation, and high-risk domains (`.xyz`, `.top`).
+    4. **Cloud Computing:** Deployed as a serverless SaaS web application on Streamlit Community Cloud.
+    """)
+
+with tab3:
+    st.subheader("🎓 Industrial Training Project Record")
+    st.table({
+        "Attribute": [
+            "Project Title",
+            "Training Domains",
+            "Student Name",
+            "University Roll No.",
+            "Department",
+            "Submitted To",
+            "Institution"
+        ],
+        "Details": [
+            "CyberGuard AI: Cloud-Based Phishing & Threat Analyzer",
+            "Python + Cloud Computing + Cyber Security and AI",
+            "Tajinder Kumar",
+            "25801100",
+            "B.Tech CSE (AI/ML)",
+            "Dr. Jagdeep Kaur (HOD)",
+            "Sant Baba Bhag Singh University, Jalandhar (Punjab)"
+        ]
+    })
