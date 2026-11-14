@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import re
 from datetime import datetime
 
@@ -49,11 +49,10 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Student & University Details Banner
+# Student & University Details Banner (Removed Submitted To line)
 st.markdown("""
     <div class="student-badge">
         <div><b>👨‍💻 Developed By:</b> Tajinder Kumar (Roll No: 25801100)</div>
-        <div><b>🎓 Submitted To:</b> Dr. Jagdeep Kaur (HOD)</div>
         <div><b>🏛️ University:</b> Sant Baba Bhag Singh University — B.Tech CSE (AI/ML)</div>
     </div>
 """, unsafe_allow_html=True)
@@ -109,13 +108,12 @@ def scan_payload(sender, subject, content):
     total_risk = min(ai_score + url_score + sender_score, 100)
     return total_risk, ai_score, url_score, sender_score, len(links), alerts
 
-# Navigation Tabs (New Structure)
+# Navigation Tabs
 tab1, tab2, tab3 = st.tabs(["🚀 Threat Scanner", "📊 Detailed AI Breakdown", "🎓 Project Profile"])
 
 with tab1:
     st.markdown("#### 🔍 Input Email or Log Payload for Cloud Inspection")
     
-    # Quick Demo Selector for Viva
     sample_mode = st.selectbox(
         "⚡ Quick Load Test Sample (Helpful for Viva Demo):",
         ["-- Type Custom Input --", "🚨 Sample 1: Bank KYC Phishing Attack", "✅ Sample 2: Safe Official University Email"]
@@ -126,7 +124,7 @@ with tab1:
         default_subject = "URGENT: Your bank account is suspended! Verify immediately"
         default_body = "Dear user, unauthorized login attempt detected. Click below within 24 hours to update KYC or your account will remain blocked: http://192.168.10.45/login"
     elif sample_mode == "✅ Sample 2: Safe Official University Email":
-        default_sender = "hod.cse@sbbsuniversity.ac.in"
+        default_sender = "info@sbbsuniversity.ac.in"
         default_subject = "Industrial Training Viva Schedule for B.Tech CSE"
         default_body = "Dear students, please bring your hardcopy training report and laptop for the project presentation tomorrow at 10:00 AM. Visit https://www.sbbsuniversity.ac.in for guidelines."
     else:
@@ -149,7 +147,6 @@ with tab1:
             st.markdown("---")
             st.markdown("#### 📈 Real-Time Cloud Telemetry")
 
-            # 4-Card Horizontal Metric Structure
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Overall Threat", f"{total}%")
             m2.metric("AI NLP Risk", f"{ai_s}/45")
@@ -193,7 +190,6 @@ with tab3:
             "Student Name",
             "University Roll No.",
             "Department",
-            "Submitted To",
             "Institution"
         ],
         "Details": [
@@ -202,7 +198,6 @@ with tab3:
             "Tajinder Kumar",
             "25801100",
             "B.Tech CSE (AI/ML)",
-            "Dr. Jagdeep Kaur (HOD)",
             "Sant Baba Bhag Singh University, Jalandhar (Punjab)"
         ]
     })
